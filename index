@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🎯 유튜브 뉴스 아이템 발굴 대시보드</title>
+<style>
+  /* ───────────────────────── RESET & BASE ───────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d27;
+    --surface2:  #22263a;
+    --border:    #2e3350;
+    --accent:    #6c63ff;
+    --accent2:   #00d4aa;
+    --accent3:   #ff6b6b;
+    --accent4:   #ffd93d;
+    --text:      #e8eaf6;
+    --text-muted:#8b90b8;
+    --tag-green: #00c896;
+    --tag-red:   #ff5c5c;
+    --tag-blue:  #4a9eff;
+    --tag-gold:  #ffc93c;
+    --radius:    14px;
+    --shadow:    0 4px 24px rgba(0,0,0,0.45);
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Pretendard', 'Noto Sans KR', 'Segoe UI', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ───────────────────────── SCROLLBAR ───────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  /* ───────────────────────── HEADER ───────────────────────── */
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #12142a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  header .logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  header .subtitle {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  header .hdr-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .quota-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 5px 14px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .quota-badge span { color: var(--accent2); font-weight: 700; }
+
+  /* ───────────────────────── MAIN LAYOUT ───────────────────────── */
+  .container {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 28px 24px;
+  }
+
+  /* ───────────────────────── CONTROL PANEL ───────────────────────── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+  .panel-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 99px;
+  }
+
+  .control-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr auto;
+    gap: 14px;
+    align-items: end;
+  }
+  @media (max-width: 768px) {
+    .control-grid { grid-template-columns: 1fr; }
+  }
+
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-group label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .input-group input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 15px;
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .input-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,0.18);
+  }
+  .input-group input::placeholder { color: #4a4e70; }
+
+  /* ───────────────────────── CATEGORY BUTTONS ───────────────────────── */
+  .cat-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .cat-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 7px 18px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .2s;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cat-btn:hover { border-color: var(--accent); color: var(--text); }
+  .cat-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(108,99,255,0.4);
+  }
+
+  /* ───────────────────────── SEARCH BUTTON ───────────────────────── */
+  .btn-search {
+    background: linear-gradient(135deg, var(--accent), #9c8dff);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .2s;
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(108,99,255,0.35);
+  }
+  .btn-search:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,0.5); }
+  .btn-search:active { transform: translateY(0); }
+  .btn-search:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  /* ───────────────────────── STATS BAR ───────────────────────── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 768px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat-card .s-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; letter-spacing: .5px; }
+  .stat-card .s-val { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+  .stat-card .s-sub { font-size: 0.72rem; color: var(--text-muted); }
+
+  /* ───────────────────────── SORT / FILTER BAR ───────────────────────── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .toolbar-label { font-size: 0.8rem; color: var(--text-muted); margin-right: 4px; }
+  .sort-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .18s;
+    font-weight: 600;
+  }
+  .sort-btn.active, .sort-btn:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  .total-count {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .total-count span { color: var(--accent2); font-weight: 700; }
+
+  /* ───────────────────────── CARD GRID ───────────────────────── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+  }
+
+  /* ───────────────────────── VIDEO CARD ───────────────────────── */
+  .vcard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: transform .22s, box-shadow .22s, border-color .22s;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .vcard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.55);
+    border-color: var(--accent);
+  }
+  .vcard .rank-badge {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--accent4);
+    z-index: 2;
+  }
+
+  /* Thumbnail */
+  .thumb-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    background: var(--surface2);
+  }
+  .thumb-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform .35s;
+    display: block;
+  }
+  .vcard:hover .thumb-wrap img { transform: scale(1.05); }
+  .duration-badge {
+    position: absolute;
+    bottom: 7px; right: 8px;
+    background: rgba(0,0,0,0.82);
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  /* Explosion overlay */
+  .hot-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(255,91,91,0.18), transparent 60%);
+    pointer-events: none;
+  }
+
+  /* Card Body */
+  .vcard-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+  .vcard-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.45;
+    color: var(--text);
+    text-decoration: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: color .15s;
+  }
+  .vcard-title:hover { color: var(--accent2); }
+
+  .channel-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .channel-dot {
+    width: 7px; height: 7px;
+    background: var(--accent2);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ───────────────────────── TAGS ───────────────────────── */
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: .3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .tag-profit  { background: rgba(0,200,150,0.15); color: var(--tag-green); border: 1px solid rgba(0,200,150,0.3); }
+  .tag-hot     { background: rgba(255,92,92,0.15);  color: var(--tag-red);   border: 1px solid rgba(255,92,92,0.3); }
+  .tag-plan    { background: rgba(74,158,255,0.15); color: var(--tag-blue);  border: 1px solid rgba(74,158,255,0.3); }
+  .tag-gold    { background: rgba(255,201,60,0.15); color: var(--tag-gold);  border: 1px solid rgba(255,201,60,0.3); }
+
+  /* ───────────────────────── METRICS ───────────────────────── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .metric-item {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 9px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .metric-item .m-label { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; }
+  .metric-item .m-val   { font-size: 0.88rem; font-weight: 800; }
+
+  /* ───────────────────────── VS-RATIO METER ───────────────────────── */
+  .vs-ratio-bar {
+    margin-top: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .vs-ratio-bar .bar-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+  .vs-ratio-bar .bar-header strong { color: var(--text); font-size: 0.8rem; }
+  .bar-track {
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .bar-fill.high { background: linear-gradient(90deg, #ff6b6b, #ffd93d); }
+
+  /* ───────────────────────── PUBLISH INFO ───────────────────────── */
+  .publish-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .explosion-score {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 700;
+  }
+  .explosion-score .fire { font-size: 0.85rem; }
+
+  /* ───────────────────────── LOADING ───────────────────────── */
+  .loading-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    gap: 18px;
+    color: var(--text-muted);
+  }
+  .spinner {
+    width: 44px; height: 44px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-steps { display: flex; flex-direction: column; gap: 6px; }
+  .loading-step {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.4;
+    transition: opacity .3s;
+  }
+  .loading-step.active { opacity: 1; color: var(--accent2); }
+  .loading-step.done   { opacity: 0.7; }
+  .loading-step.done::before { content: '✓ '; color: var(--tag-green); }
+
+  /* ───────────────────────── EMPTY / ERROR ───────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+    grid-column: 1/-1;
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state h3 { color: var(--text); margin-bottom: 8px; }
+  .error-msg {
+    background: rgba(255,92,92,0.1);
+    border: 1px solid rgba(255,92,92,0.3);
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: #ff9494;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  /* ───────────────────────── TOOLTIP ───────────────────────── */
+  [data-tip] { position: relative; cursor: help; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 130%; left: 50%;
+    transform: translateX(-50%);
+    background: #12142a;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+    color: var(--text);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s;
+    z-index: 999;
+  }
+  [data-tip]:hover::after { opacity: 1; }
+
+  /* ───────────────────────── FOOTER ───────────────────────── */
+  footer {
+    text-align: center;
+    padding: 28px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+
+  /* ───────────────────────── ANIMATION ───────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .vcard { animation: fadeUp .4s ease both; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ HEADER ════════════════════ -->
+<header>
+  <div>
+    <div class="logo">📡 YT Insight Dashboard</div>
+    <div class="subtitle">유튜브 뉴스 아이템 발굴 &amp; 제작 가치 분석 도구</div>
+  </div>
+  <div class="hdr-right">
+    <div class="quota-badge">오늘 API 사용: <span id="quotaUsed">0</span> 유닛</div>
+  </div>
+</header>
+
+<!-- ════════════════════ MAIN ════════════════════ -->
+<div class="container">
+
+  <!-- ─── CONTROL PANEL ─── -->
+  <div class="panel">
+    <div class="panel-title">검색 설정</div>
+
+    <div class="control-grid">
+      <!-- API KEY -->
+      <div class="input-group">
+        <label>🔑 YouTube Data API Key</label>
+        <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off"/>
+      </div>
+      <!-- KEYWORD -->
+      <div class="input-group">
+        <label>🔍 검색 키워드</label>
+        <input type="text" id="keyword" placeholder="예: 금리 인하, 삼성전자, AI 반도체..."
+               onkeydown="if(event.key==='Enter') fetchData()"/>
+      </div>
+      <!-- BUTTON -->
+      <button class="btn-search" id="searchBtn" onclick="fetchData()">
+        <span>▶</span> 분석 시작
+      </button>
+    </div>
+
+    <!-- CATEGORY BUTTONS -->
+    <div class="cat-row" id="catRow">
+      <span style="font-size:.78rem;color:var(--text-muted);align-self:center;">빠른 분야:</span>
+      <button class="cat-btn" onclick="setCat(this,'경제 금리 환율')">💰 경제</button>
+      <button class="cat-btn" onclick="setCat(this,'복지 지원금 혜택')">🏥 복지</button>
+      <button class="cat-btn" onclick="setCat(this,'AI 반도체 테크')">🤖 테크</button>
+      <button class="cat-btn" onclick="setCat(this,'글로벌 국제 외교')">🌏 글로벌</button>
+      <button class="cat-btn" onclick="setCat(this,'부동산 청약 아파트')">🏠 부동산</button>
+      <button class="cat-btn" onclick="setCat(this,'주식 코스피 투자')">📈 주식</button>
+    </div>
+  </div>
+
+  <!-- ─── ERROR MESSAGE ─── -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- ─── STATS BAR ─── -->
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat-card">
+      <div class="s-label">🎯 분석 영상</div>
+      <div class="s-val" id="s-total" style="color:var(--accent)">-</div>
+      <div class="s-sub">검색 결과</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label">🔥 폭발 영상</div>
+      <div class="s-val" id="s-hot" style="color:var(--tag-red)">-</div>
+      <div class="s-sub">V/S ≥ 1.0</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label">💎 고수익 예상</div>
+      <div class="s-val" id="s-profit" style="color:var(--tag-green)">-</div>
+      <div class="s-sub">고단가 키워드 포함</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label">⚡ 평균 조회수</div>
+      <div class="s-val" id="s-avgview" style="color:var(--accent2)">-</div>
+      <div class="s-sub">최근 7일</div>
+    </div>
+  </div>
+
+  <!-- ─── LOADING ─── -->
+  <div class="loading-wrap" id="loadingWrap" style="display:none">
+    <div class="spinner"></div>
+    <div class="loading-steps">
+      <div class="loading-step" id="step1">📡 유튜브 검색 API 호출 중...</div>
+      <div class="loading-step" id="step2">📊 영상 상세 통계 수집 중 (배치)...</div>
+      <div class="loading-step" id="step3">🧠 분석 지표 계산 중...</div>
+      <div class="loading-step" id="step4">🎨 카드 렌더링 중...</div>
+    </div>
+  </div>
+
+  <!-- ─── TOOLBAR ─── -->
+  <div class="toolbar" id="toolbar" style="display:none">
+    <span class="toolbar-label">정렬:</span>
+    <button class="sort-btn active" onclick="sortCards('explosion',this)">⚡ 폭발력</button>
+    <button class="sort-btn" onclick="sortCards('vsratio',this)">🎯 V/S 비율</button>
+    <button class="sort-btn" onclick="sortCards('views',this)">👁 조회수</button>
+    <button class="sort-btn" onclick="sortCards('comments',this)">💬 댓글</button>
+    <button class="sort-btn" onclick="sortCards('recent',this)">🕐 최신순</button>
+    <div class="total-count">총 <span id="totalCount">0</span>개 영상</div>
+  </div>
+
+  <!-- ─── CARD GRID ─── -->
+  <div class="card-grid" id="cardGrid"></div>
+
+</div>
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer>
+  YT Insight Dashboard &nbsp;|&nbsp; YouTube Data API v3 기반 &nbsp;|&nbsp;
+  API 할당량: search 100유닛 + videos.list ~1유닛/영상
+</footer>
+
+<!-- ════════════════════ JAVASCRIPT ════════════════════ -->
+<script>
+'use strict';
+
+/* ─────────────────────────────────────────────
+   CONSTANTS & STATE
+───────────────────────────────────────────── */
+const HIGH_VALUE_KEYWORDS = [
+  '금리','지원금','삼성','AI','반도체','부동산','청약','주식','코스피','환율',
+  '비트코인','코인','아파트','대출','복지','연금','ETF','배당','투자','인공지능',
+  '테슬라','애플','구글','엔비디아','챗GPT','GPT','반도체','배터리','전기차'
+];
+const EXPLOSION_THRESHOLDS = { superHot: 5000, hot: 1000, warm: 200 };
+const VS_THRESHOLDS         = { superHigh: 3, high: 1, mid: 0.3 };
+
+let allVideos    = [];
+let quotaTotal   = 0;
+let currentSort  = 'explosion';
+
+/* ─────────────────────────────────────────────
+   UTILITY FUNCTIONS
+───────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+function fmtNum(n) {
+  if (!n && n !== 0) return '-';
+  n = Number(n);
+  if (n >= 1e8) return (n/1e8).toFixed(1) + '억';
+  if (n >= 1e4) return (n/1e4).toFixed(1) + '만';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'k';
+  return n.toLocaleString();
+}
+
+function fmtAgo(dateStr) {
+  const diff = (Date.now() - new Date(dateStr)) / 1000;
+  if (diff < 3600)   return Math.floor(diff/60) + '분 전';
+  if (diff < 86400)  return Math.floor(diff/3600) + '시간 전';
+  return Math.floor(diff/86400) + '일 전';
+}
+
+function hoursAgo(dateStr) {
+  return (Date.now() - new Date(dateStr)) / 3600000;
+}
+
+function addQuota(n) {
+  quotaTotal += n;
+  $('quotaUsed').textContent = quotaTotal;
+}
+
+function showError(msg) {
+  const el = $('errorMsg');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+}
+function clearError() { $('errorMsg').style.display = 'none'; }
+
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = $(`step${i}`);
+    if (i < n)  { el.className = 'loading-step done'; }
+    if (i === n){ el.className = 'loading-step active'; }
+    if (i > n)  { el.className = 'loading-step'; }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   ANALYSIS ENGINE
+───────────────────────────────────────────── */
+function calcExplosion(views, publishedAt) {
+  const hours = Math.max(hoursAgo(publishedAt), 0.1);
+  return views / hours;                  // 시간당 조회수
+}
+
+function calcVSRatio(views, subscribers) {
+  if (!subscribers || subscribers === 0) return 0;
+  return (views / subscribers) * 100;   // % 단위
+}
+
+function hasHighValueKeyword(title) {
+  const t = title.toLowerCase();
+  return HIGH_VALUE_KEYWORDS.some(k => t.includes(k.toLowerCase()));
+}
+
+function getExplosionLabel(score) {
+  if (score >= EXPLOSION_THRESHOLDS.superHot) return { label:'🔥🔥 초폭발', cls:'tag-hot', heat: 100 };
+  if (score >= EXPLOSION_THRESHOLDS.hot)      return { label:'🔥 폭발 중', cls:'tag-hot', heat: 70 };
+  if (score >= EXPLOSION_THRESHOLDS.warm)     return { label:'⚡ 상승 중', cls:'tag-plan', heat: 40 };
+  return { label:'📊 일반', cls:'', heat: 10 };
+}
+
+function getVSLabel(ratio) {
+  if (ratio >= VS_THRESHOLDS.superHigh * 100) return { label:'🏆 기획력 S급', color:'var(--tag-green)' };
+  if (ratio >= VS_THRESHOLDS.high * 100)      return { label:'🎯 기획력 A급', color:'var(--tag-blue)' };
+  if (ratio >= VS_THRESHOLDS.mid * 100)       return { label:'📐 기획력 B급', color:'var(--accent4)' };
+  return { label:'기획력 C급', color:'var(--text-muted)' };
+}
+
+/* ─────────────────────────────────────────────
+   API CALLS
+───────────────────────────────────────────── */
+async function apiGet(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function searchVideos(apiKey, keyword, maxResults = 30) {
+  const published = new Date(Date.now() - 7*24*3600*1000).toISOString();
+  const url = `https://www.googleapis.com/youtube/v3/search`
+    + `?part=snippet`
+    + `&q=${encodeURIComponent(keyword)}`
+    + `&type=video`
+    + `&order=viewCount`
+    + `&publishedAfter=${published}`
+    + `&regionCode=KR`
+    + `&relevanceLanguage=ko`
+    + `&maxResults=${maxResults}`
+    + `&key=${apiKey}`;
+  addQuota(100);
+  return apiGet(url);
+}
+
+async function getVideoDetails(apiKey, videoIds) {
+  // 배치 처리: 최대 50개씩
+  const chunks = [];
+  for (let i = 0; i < videoIds.length; i += 50)
+    chunks.push(videoIds.slice(i, i+50));
+
+  const results = [];
+  for (const chunk of chunks) {
+    const url = `https://www.googleapis.com/youtube/v3/videos`
+      + `?part=statistics,contentDetails`
+      + `&id=${chunk.join(',')}`
+      + `&key=${apiKey}`;
+    addQuota(chunk.length);
+    const data = await apiGet(url);
+    results.push(...(data.items || []));
+  }
+  return results;
+}
+
+async function getChannelDetails(apiKey, channelIds) {
+  const unique = [...new Set(channelIds)];
+  const chunks = [];
+  for (let i = 0; i < unique.length; i += 50)
+    chunks.push(unique.slice(i, i+50));
+
+  const map = {};
+  for (const chunk of chunks) {
+    const url = `https://www.googleapis.com/youtube/v3/channels`
+      + `?part=statistics`
+      + `&id=${chunk.join(',')}`
+      + `&key=${apiKey}`;
+    addQuota(chunk.length);
+    const data = await apiGet(url);
+    (data.items || []).forEach(ch => {
+      map[ch.id] = Number(ch.statistics?.subscriberCount || 0);
+    });
+  }
+  return map;
+}
+
+/* ─────────────────────────────────────────────
+   MAIN FETCH & RENDER
+───────────────────────────────────────────── */
+async function fetchData() {
+  const apiKey  = $('apiKey').value.trim();
+  const keyword = $('keyword').value.trim();
+
+  if (!apiKey)  { showError('API 키를 입력해주세요.'); return; }
+  if (!keyword) { showError('검색 키워드를 입력해주세요.'); return; }
+
+  clearError();
+  $('searchBtn').disabled = true;
+  $('loadingWrap').style.display = 'flex';
+  $('statsBar').style.display    = 'none';
+  $('toolbar').style.display     = 'none';
+  $('cardGrid').innerHTML        = '';
+  allVideos = [];
+
+  try {
+    // ── Step 1: Search ──
+    setStep(1);
+    const searchData = await searchVideos(apiKey, keyword, 30);
+    const items = searchData.items || [];
+    if (items.length === 0) throw new Error('검색 결과가 없습니다. 키워드를 변경해보세요.');
+
+    const videoIds   = items.map(i => i.id.videoId).filter(Boolean);
+    const channelIds = items.map(i => i.snippet.channelId).filter(Boolean);
+
+    // ── Step 2: Batch video stats + channel stats ──
+    setStep(2);
+    const [videoDetails, channelMap] = await Promise.all([
+      getVideoDetails(apiKey, videoIds),
+      getChannelDetails(apiKey, channelIds)
+    ]);
+
+    // Build lookup map
+    const statsMap = {};
+    videoDetails.forEach(v => { statsMap[v.id] = v; });
+
+    // ── Step 3: Compute metrics ──
+    setStep(3);
+    allVideos = items.map((item, idx) => {
+      const id          = item.id.videoId;
+      const snippet     = item.snippet;
+      const detail      = statsMap[id] || {};
+      const stats       = detail.statistics || {};
+      const views       = Number(stats.viewCount   || 0);
+      const comments    = Number(stats.commentCount || 0);
+      const likes       = Number(stats.likeCount   || 0);
+      const subs        = channelMap[snippet.channelId] || 0;
+      const explosion   = calcExplosion(views, snippet.publishedAt);
+      const vsRatio     = calcVSRatio(views, subs);
+      const isProfit    = hasHighValueKeyword(snippet.title);
+      const thumb       = snippet.thumbnails?.medium?.url
+                       || snippet.thumbnails?.default?.url || '';
+      const duration    = formatDuration(detail.contentDetails?.duration || '');
+
+      return {
+        rank: idx + 1, id, title: snippet.title,
+        channel: snippet.channelTitle, channelId: snippet.channelId,
+        publishedAt: snippet.publishedAt, thumb,
+        views, comments, likes, subs, explosion, vsRatio,
+        isProfit, duration
+      };
+    });
+
+    // ── Step 4: Render ──
+    setStep(4);
+    await sleep(200);
+
+    sortAndRender(currentSort);
+    updateStats();
+
+    $('loadingWrap').style.display = 'none';
+    $('statsBar').style.display    = 'grid';
+    $('toolbar').style.display     = 'flex';
+
+  } catch (err) {
+    $('loadingWrap').style.display = 'none';
+    showError(err.message || '알 수 없는 오류가 발생했습니다.');
+    console.error(err);
+  } finally {
+    $('searchBtn').disabled = false;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   SORT & RENDER
+───────────────────────────────────────────── */
+function sortCards(key, btn) {
+  currentSort = key;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  sortAndRender(key);
+}
+
+function sortAndRender(key) {
+  const sorted = [...allVideos].sort((a, b) => {
+    if (key === 'explosion') return b.explosion - a.explosion;
+    if (key === 'vsratio')   return b.vsRatio   - a.vsRatio;
+    if (key === 'views')     return b.views      - a.views;
+    if (key === 'comments')  return b.comments   - a.comments;
+    if (key === 'recent')    return new Date(b.publishedAt) - new Date(a.publishedAt);
+    return 0;
+  });
+
+  $('totalCount').textContent = sorted.length;
+  $('cardGrid').innerHTML = '';
+
+  if (sorted.length === 0) {
+    $('cardGrid').innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🔍</div>
+        <h3>결과 없음</h3>
+        <p>다른 키워드로 검색해보세요.</p>
+      </div>`;
+    return;
+  }
+
+  sorted.forEach((v, i) => {
+    const el = buildCard(v, i + 1);
+    $('cardGrid').appendChild(el);
+  });
+}
+
+/* ─────────────────────────────────────────────
+   CARD BUILDER
+───────────────────────────────────────────── */
+function buildCard(v, rank) {
+  const exp     = getExplosionLabel(v.explosion);
+  const vsInfo  = getVSLabel(v.vsRatio);
+  const isHot   = v.explosion >= EXPLOSION_THRESHOLDS.hot;
+  const vsBarPct = Math.min(v.vsRatio / (VS_THRESHOLDS.superHigh * 100) * 100, 100).toFixed(1);
+  const isHighVS = v.vsRatio >= VS_THRESHOLDS.high * 100;
+
+  // Tags
+  const tags = [];
+  if (v.isProfit) tags.push(`<span class="tag tag-profit">💰 고수익 예상</span>`);
+  if (v.explosion >= EXPLOSION_THRESHOLDS.hot) tags.push(`<span class="tag tag-hot">🔥 실시간 폭발</span>`);
+  if (v.vsRatio >= VS_THRESHOLDS.high * 100)   tags.push(`<span class="tag tag-plan">🎯 기획력 우수</span>`);
+  if (v.subs > 0 && v.subs < 50000 && v.views > 30000)
+    tags.push(`<span class="tag tag-gold">✨ 숨겨진 보석</span>`);
+
+  const card = document.createElement('div');
+  card.className = 'vcard';
+  card.style.animationDelay = (rank * 0.04) + 's';
+
+  card.innerHTML = `
+    <div class="rank-badge">#${rank}</div>
+
+    <!-- THUMBNAIL -->
+    <div class="thumb-wrap">
+      ${isHot ? '<div class="hot-overlay"></div>' : ''}
+      <img src="${v.thumb}" alt="${escapeHtml(v.title)}" loading="lazy"
+           onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'320\\' height=\\'180\\'><rect fill=\\'%231a1d27\\'/><text x=\\'50%\\' y=\\'50%\\' fill=\\'%234a4e70\\' text-anchor=\\'middle\\' dy=\\'.3em\\' font-size=\\'14\\'>No Image</text></svg>'"/>
+      ${v.duration ? `<div class="duration-badge">${v.duration}</div>` : ''}
+    </div>
+
+    <!-- BODY -->
+    <div class="vcard-body">
+      <a class="vcard-title"
+         href="https://www.youtube.com/watch?v=${v.id}"
+         target="_blank" rel="noopener">${escapeHtml(v.title)}</a>
+
+      <div class="channel-info">
+        <div class="channel-dot"></div>
+        <span>${escapeHtml(v.channel)}</span>
+        <span style="margin-left:auto">${v.subs > 0 ? '구독 ' + fmtNum(v.subs) : '구독자 비공개'}</span>
+      </div>
+
+      ${tags.length > 0 ? `<div class="tag-row">${tags.join('')}</div>` : ''}
+
+      <!-- METRICS -->
+      <div class="metrics-grid">
+        <div class="metric-item" data-tip="총 조회수">
+          <div class="m-label">👁 조회수</div>
+          <div class="m-val" style="color:var(--accent2)">${fmtNum(v.views)}</div>
+        </div>
+        <div class="metric-item" data-tip="총 댓글 수">
+          <div class="m-label">💬 댓글</div>
+          <div class="m-val" style="color:var(--accent4)">${fmtNum(v.comments)}</div>
+        </div>
+        <div class="metric-item" data-tip="(조회수/시간) 폭발 속도">
+          <div class="m-label">⚡ 시간당</div>
+          <div class="m-val" style="color:${isHot ? 'var(--tag-red)' : 'var(--text)'}">${fmtNum(Math.round(v.explosion))}</div>
+        </div>
+      </div>
+
+      <!-- V/S RATIO BAR -->
+      <div class="vs-ratio-bar" data-tip="조회수 ÷ 구독자 × 100 = 기획력 점수">
+        <div class="bar-header">
+          <span>기획력 점수 (V/S Ratio)</span>
+          <strong style="color:${vsInfo.color}">${v.vsRatio.toFixed(2)}% &nbsp;${vsInfo.label}</strong>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill ${isHighVS ? 'high' : ''}" style="width:${vsBarPct}%"></div>
+        </div>
+      </div>
+
+      <!-- PUBLISH ROW -->
+      <div class="publish-row">
+        <span>🕐 ${fmtAgo(v.publishedAt)}</span>
+        <div class="explosion-score" style="color:${isHot?'var(--tag-red)':'var(--text-muted)'}">
+          <span class="fire">${exp.label}</span>
+          <span style="font-size:.7rem;opacity:.7">(${fmtNum(Math.round(v.explosion))}/h)</span>
+        </div>
+      </div>
+    </div>`;
+
+  return card;
+}
+
+/* ─────────────────────────────────────────────
+   STATS UPDATE
+───────────────────────────────────────────── */
+function updateStats() {
+  const total   = allVideos.length;
+  const hot     = allVideos.filter(v => v.explosion >= EXPLOSION_THRESHOLDS.hot).length;
+  const profit  = allVideos.filter(v => v.isProfit).length;
+  const avgView = total > 0
+    ? Math.round(allVideos.reduce((s,v) => s + v.views, 0) / total) : 0;
+
+  $('s-total').textContent  = total;
+  $('s-hot').textContent    = hot;
+  $('s-profit').textContent = profit;
+  $('s-avgview').textContent = fmtNum(avgView);
+}
+
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+function setCat(btn, kw) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  $('keyword').value = kw;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function formatDuration(iso) {
+  if (!iso) return '';
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!m) return '';
+  const h = parseInt(m[1]||0), min = parseInt(m[2]||0), sec = parseInt(m[3]||0);
+  if (h > 0) return `${h}:${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${min}:${String(sec).padStart(2,'0')}`;
+}
+</script>
+</body>
+</html>
